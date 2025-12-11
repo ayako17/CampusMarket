@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.backend.repository.BookMapper">
+
+    <sql id="Base_Book_Columns">
+        id, user_id, title, price, description, image_url, situation
+    </sql>
+
+    <resultMap id="BookResultMap" type="com.backend.entity.Book">
+        <id column="id" property="id" />
+        <result column="title" property="title" />
+        <result column="price" property="price" />
+        <result column="description" property="description" />
+        <result column="image_url" property="imageUrl" />
+        <result column="situation" property="situation" />
+
+        <association property="user" column="user_id"
+                     select="com.backend.repository.UserMapper.findByIdSimple"/>
+    </resultMap>
+
+    <select id="findAllBooks" resultMap="BookResultMap">
+        SELECT <include refid="Base_Book_Columns" />
+        FROM books
+        ORDER BY id DESC
+    </select>
+
+    <select id="findById" resultMap="BookResultMap">
+        SELECT <include refid="Base_Book_Columns" />
+        FROM books
+        WHERE id = #{id}
+    </select>
+
+    <insert id="insertBook" parameterType="com.backend.entity.Book"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO books (user_id, title, price, description, image_url, situation)
+        VALUES (#{user.id}, #{title}, #{price}, #{description}, #{imageUrl}, #{situation})
+    </insert>
+
+    <update id="updateBook" parameterType="com.backend.entity.Book">
+        UPDATE books
+        <set>
+            title = #{title},
+            price = #{price},
+            description = #{description},
+            image_url = #{imageUrl},
+            situation = #{situation}
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="findByTitleContaining" resultMap="BookResultMap">
+        SELECT <include refid="Base_Book_Columns" />
+        FROM books
+        WHERE title LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY id DESC
+    </select>
+
+    <select id="findByUserId" resultMap="BookResultMap">
+        SELECT <include refid="Base_Book_Columns" />
+        FROM books
+        WHERE user_id = #{userId}
+        ORDER BY id DESC
+    </select>
+
+    <delete id="deleteBookById">
+        DELETE FROM books WHERE id = #{id}
+    </delete>
+
+</mapper>

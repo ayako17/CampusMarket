@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.backend.repository.MessageMapper">
+
+    <sql id="User_Column_List">
+        u.id, u.username, u.email
+    </sql>
+
+    <sql id="Base_Message_Columns">
+        id, sender_id, receiver_id, subject, content, timestamp, is_read, is_deleted_by_sender, is_deleted_by_receiver
+    </sql>
+
+    <resultMap id="MessageResultMap" type="com.backend.entity.Message">
+        <id column="id" property="id" />
+        <result column="subject" property="subject" />
+        <result column="content" property="content" />
+        <result column="timestamp" property="timestamp" />
+        <result column="is_read" property="isRead" />
+        <result column="is_deleted_by_sender" property="isDeletedBySender" />
+        <result column="is_deleted_by_receiver" property="isDeletedByReceiver" />
+
+        <association property="sender" column="sender_id"
+                     select="com.backend.repository.UserMapper.findByIdSimple"/>
+
+        <association property="receiver" column="receiver_id"
+                     select="com.backend.repository.UserMapper.findByIdSimple"/>
+    </resultMap>
+
+    <select id="findById" resultMap="MessageResultMap">
+        SELECT
+        <include refid="Base_Message_Columns" />
+        FROM messages
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByReceiverIdOrderByTimestampDesc" resultMap="MessageResultMap">
+        SELECT
+        <include refid="Base_Message_Columns" />
+        FROM messages
+        WHERE receiver_id = #{receiverId}
+        ORDER BY timestamp DESC
+    </select>
+
+    <select id="findBySenderIdOrderByTimestampDesc" resultMap="MessageResultMap">
+        SELECT
+        <include refid="Base_Message_Columns" />
+        FROM messages
+        WHERE sender_id = #{senderId}
+        ORDER BY timestamp DESC
+    </select>
+
+    <select id="findConversationBetweenUsers" resultMap="MessageResultMap">
+        SELECT
+        <include refid="Base_Message_Columns" />
+        FROM messages
+        WHERE (sender_id = #{userId} AND receiver_id = #{contactId})
+        OR (sender_id = #{contactId} AND receiver_id = #{userId})
+        ORDER BY timestamp DESC
+    </select>
+
+    <select id="findDistinctReceiverBySenderId" resultType="com.backend.entity.User">
+        SELECT DISTINCT u.id, u.username, u.email
+        FROM messages m
+                 JOIN users u ON m.receiver_id = u.id
+        WHERE m.sender_id = #{userId}
+    </select>
+
+    <select id="findDistinctSenderByReceiverId" resultType="com.backend.entity.User">
+        SELECT DISTINCT u.id, u.username, u.email
+        FROM messages m
+                 JOIN users u ON m.sender_id = u.id
+        WHERE m.receiver_id = #{userId}
+    </select>
+
+    <insert id="insertMessage" parameterType="com.backend.entity.Message"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO messages (sender_id, receiver_id, subject, content, timestamp, is_read, is_deleted_by_sender, is_deleted_by_receiver)
+        VALUES (#{sender.id}, #{receiver.id}, #{subject}, #{content}, #{timestamp}, #{isRead}, #{isDeletedBySender}, #{isDeletedByReceiver})
+    </insert>
+
+    <update id="updateMessage" parameterType="com.backend.entity.Message">
+        UPDATE messages
+        SET
+            is_read = #{isRead},
+            is_deleted_by_sender = #{isDeletedBySender},
+            is_deleted_by_receiver = #{isDeletedByReceiver}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteMessage">
+        DELETE FROM messages
+        WHERE id = #{id}
+    </delete>
+
+</mapper>

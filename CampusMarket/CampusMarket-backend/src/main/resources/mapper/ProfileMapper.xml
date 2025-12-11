@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.backend.repository.ProfileMapper">
+
+    <sql id="Base_Profile_Columns">
+        id, user_id, name, grade, college, contact, address, avatar_url, latitude, longitude, bio
+    </sql>
+
+    <resultMap id="ProfileResultMap" type="com.backend.entity.Profile">
+        <id column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="grade" property="grade" />
+        <result column="college" property="college" />
+        <result column="contact" property="contact" />
+        <result column="address" property="address" />
+        <result column="avatar_url" property="avatarUrl" />
+        <result column="latitude" property="latitude" />
+        <result column="longitude" property="longitude" />
+        <result column="bio" property="bio" />
+
+        <association property="user" column="user_id"
+                     select="com.backend.repository.UserMapper.findByIdSimple"/>
+    </resultMap>
+
+    <select id="findByUserId" resultMap="ProfileResultMap">
+        SELECT <include refid="Base_Profile_Columns" />
+        FROM profiles
+        WHERE user_id = #{userId}
+    </select>
+
+    <select id="findById" resultMap="ProfileResultMap">
+        SELECT <include refid="Base_Profile_Columns" />
+        FROM profiles
+        WHERE id = #{id}
+    </select>
+
+    <insert id="insertProfile" parameterType="com.backend.entity.Profile"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO profiles (user_id, name, grade, college, contact, address, avatar_url, latitude, longitude, bio)
+        VALUES (#{user.id}, #{name}, #{grade}, #{college}, #{contact}, #{address}, #{avatarUrl}, #{latitude}, #{longitude}, #{bio})
+    </insert>
+
+    <update id="updateProfile" parameterType="com.backend.entity.Profile">
+        UPDATE profiles
+        <set>
+            name = #{name},
+            grade = #{grade},
+            college = #{college},
+            contact = #{contact},
+            address = #{address},
+            avatar_url = #{avatarUrl},
+            latitude = #{latitude},
+            longitude = #{longitude},
+            bio = #{bio}
+        </set>
+        WHERE id = #{id}
+    </update>
+
+</mapper>

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.backend.repository.PartnerMatchMapper">
+
+    <sql id="Base_PartnerMatch_Columns">
+        id, partner_id, matcher_id, matched_at, status
+    </sql>
+
+    <resultMap id="PartnerMatchResultMap" type="com.backend.entity.PartnerMatch">
+        <id column="id" property="id" />
+        <result column="matched_at" property="matchedAt" />
+        <result column="status" property="status" />
+
+        <association property="partner" column="partner_id"
+                     select="com.backend.repository.PartnerMapper.findByIdSimple"/>
+
+        <association property="matcher" column="matcher_id"
+                     select="com.backend.repository.UserMapper.findByIdSimple"/>
+    </resultMap>
+
+    <insert id="insertPartnerMatch" parameterType="com.backend.entity.PartnerMatch"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO partner_match (partner_id, matcher_id, matched_at, status)
+        VALUES (#{partner.id}, #{matcher.id}, #{matchedAt}, #{status})
+    </insert>
+
+    <update id="updatePartnerMatch" parameterType="com.backend.entity.PartnerMatch">
+        UPDATE partner_match
+        SET status = #{status}
+        WHERE id = #{id}
+    </update>
+
+    <select id="findById" resultMap="PartnerMatchResultMap">
+        SELECT <include refid="Base_PartnerMatch_Columns" />
+        FROM partner_match
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByMatcherId" resultMap="PartnerMatchResultMap">
+        SELECT <include refid="Base_PartnerMatch_Columns" />
+        FROM partner_match
+        WHERE matcher_id = #{userId}
+        ORDER BY matched_at DESC
+        LIMIT #{pageable.pageSize} OFFSET #{pageable.offset}
+    </select>
+
+    <select id="countByMatcherId" resultType="long">
+        SELECT COUNT(id)
+        FROM partner_match
+        WHERE matcher_id = #{userId}
+    </select>
+
+    <select id="findByPartnerUserId" resultMap="PartnerMatchResultMap">
+        SELECT
+            pm.id,
+            pm.partner_id,
+            pm.matcher_id,
+            pm.matched_at,
+            pm.status
+        FROM partner_match pm
+                 JOIN partner p ON pm.partner_id = p.id
+        WHERE p.user_id = #{userId}
+        ORDER BY pm.matched_at DESC
+            LIMIT #{pageable.pageSize} OFFSET #{pageable.offset}
+    </select>
+
+    <select id="countByPartnerUserId" resultType="long">
+        SELECT COUNT(pm.id)
+        FROM partner_match pm
+                 JOIN partner p ON pm.partner_id = p.id
+        WHERE p.user_id = #{userId}
+    </select>
+
+    <select id="countAcceptedMatchesByPartnerId" resultType="long">
+        SELECT COUNT(id)
+        FROM partner_match
+        WHERE partner_id = #{partnerId} AND status = 'ACCEPTED'
+    </select>
+
+    <select id="findByPartnerIdAndMatcherId" resultMap="PartnerMatchResultMap">
+        SELECT
+        <include refid="Base_PartnerMatch_Columns" />
+        FROM partner_match
+        WHERE
+        partner_id = #{partnerId}
+        AND
+        matcher_id = #{matcherId}
+    </select>
+
+    <delete id="deleteByPartnerId">
+        DELETE FROM partner_match
+        WHERE partner_id = #{partnerId}
+    </delete>
+
+    <delete id="deleteByMatcherId">
+        DELETE FROM partner_match
+        WHERE matcher_id = #{matcherId}
+    </delete>
+</mapper>

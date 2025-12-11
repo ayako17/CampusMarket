@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.backend.repository.PartnerInterestMapper">
+
+    <sql id="Base_PartnerInterest_Columns">
+        id, user_id, partner_id
+    </sql>
+
+    <resultMap id="PartnerInterestResultMap" type="com.backend.entity.PartnerInterest">
+        <id column="id" property="id" />
+
+        <association property="user" column="user_id"
+                     select="com.backend.repository.UserMapper.findByIdSimple"/>
+
+        <association property="partner" column="partner_id"
+                     select="com.backend.repository.PartnerMapper.findByIdSimple"/>
+    </resultMap>
+
+    <insert id="insertPartnerInterest" parameterType="com.backend.entity.PartnerInterest"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO interest (user_id, partner_id)  VALUES (#{user.id}, #{partner.id})
+    </insert>
+
+    <delete id="deleteByUserIdAndPartnerId">
+        DELETE FROM interest  WHERE user_id = #{userId} AND partner_id = #{partnerId}
+    </delete>
+
+    <delete id="deletePartnerInterest">
+        DELETE FROM interest WHERE id = #{id}
+    </delete>
+
+    <select id="findByUserAndPartner" resultMap="PartnerInterestResultMap">
+        SELECT <include refid="Base_PartnerInterest_Columns" />
+        FROM interest  WHERE user_id = #{userId} AND partner_id = #{partnerId}
+    </select>
+
+    <select id="findByUserId" resultMap="PartnerInterestResultMap">
+        SELECT <include refid="Base_PartnerInterest_Columns" />
+        FROM interest  WHERE user_id = #{userId}
+        ORDER BY id DESC
+        LIMIT #{pageable.pageSize} OFFSET #{pageable.offset}
+    </select>
+
+    <select id="countByUserId" resultType="long">
+        SELECT COUNT(id)
+        FROM interest WHERE user_id = #{userId}
+    </select>
+
+    <delete id="deleteByPartnerId">
+        DELETE FROM interest WHERE partner_id = #{partnerId}
+    </delete>
+</mapper>

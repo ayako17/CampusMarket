@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.backend.repository.PartnerMapper">
+
+    <sql id="Base_Partner_Columns">
+        id, user_id, title, description, subject, preferred_time, contact_method, status, created_at, target_count, matched_count
+    </sql>
+
+    <resultMap id="PartnerResultMap" type="com.backend.entity.Partner">
+        <id column="id" property="id" />
+        <result column="title" property="title" />
+        <result column="description" property="description" />
+        <result column="subject" property="subject" />
+        <result column="preferred_time" property="preferredTime" />
+        <result column="contact_method" property="contactMethod" />
+        <result column="status" property="status" />
+        <result column="created_at" property="createdAt" />
+        <result column="target_count" property="targetCount" />
+        <result column="matched_count" property="matchedCount" />
+
+        <association property="user" column="user_id"
+                     select="com.backend.repository.UserMapper.findByIdSimple"/>
+    </resultMap>
+
+    <insert id="insertPartner" parameterType="com.backend.entity.Partner"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO partner (user_id, title, description, subject, preferred_time, contact_method, status, created_at, target_count, matched_count)
+        VALUES (#{user.id}, #{title}, #{description}, #{subject}, #{preferredTime}, #{contactMethod}, 'ACTIVE', NOW(), #{targetCount}, #{matchedCount})
+    </insert>
+
+    <update id="updatePartner" parameterType="com.backend.entity.Partner">
+        UPDATE partner
+        SET
+            title = #{title},
+            description = #{description},
+            subject = #{subject},
+            preferred_time = #{preferredTime},
+            contact_method = #{contactMethod},
+            status = #{status},
+            target_count = #{targetCount},
+            matched_count = #{matchedCount}
+        WHERE id = #{id}
+    </update>
+
+    <select id="findById" resultMap="PartnerResultMap">
+        SELECT <include refid="Base_Partner_Columns" />
+        FROM partner
+        WHERE id = #{id}
+    </select>
+
+    <sql id="Find_Partners_Base">
+        SELECT <include refid="Base_Partner_Columns" />
+        FROM partner
+        <where>
+            <if test="subject != null and subject != ''">
+                AND subject LIKE CONCAT('%', #{subject}, '%')
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+        </where>
+    </sql>
+
+    <select id="findByUserIdAndStatus" resultMap="PartnerResultMap">
+        <include refid="Find_Partners_Base" />
+        ORDER BY created_at DESC
+        LIMIT #{pageable.pageSize} OFFSET #{pageable.offset}
+    </select>
+
+    <select id="findBySubjectContainingAndStatus" resultMap="PartnerResultMap">
+        <include refid="Find_Partners_Base" />
+        ORDER BY created_at DESC
+        LIMIT #{pageable.pageSize} OFFSET #{pageable.offset}
+    </select>
+
+    <select id="findBySubjectContaining" resultMap="PartnerResultMap">
+        <include refid="Find_Partners_Base" />
+        ORDER BY created_at DESC
+        LIMIT #{pageable.pageSize} OFFSET #{pageable.offset}
+    </select>
+
+    <select id="findByStatus" resultMap="PartnerResultMap">
+        SELECT <include refid="Base_Partner_Columns" />
+        FROM partner
+        WHERE status = #{status}
+        ORDER BY created_at DESC
+        LIMIT #{pageable.pageSize} OFFSET #{pageable.offset}
+    </select>
+
+    <select id="findByStatusOrderByCreatedAtDesc" resultMap="PartnerResultMap">
+        <include refid="Find_Partners_Base" />
+        ORDER BY created_at DESC
+        LIMIT #{pageable.pageSize} OFFSET #{pageable.offset}
+    </select>
+
+    <select id="findAvailablePartners" resultMap="PartnerResultMap">
+        SELECT <include refid="Base_Partner_Columns" />
+        FROM partner
+        WHERE status = 'ACTIVE' AND matched_count &lt; target_count
+        ORDER BY created_at DESC
+        LIMIT #{pageable.pageSize} OFFSET #{pageable.offset}
+    </select>
+
+    <update id="updateMatchedCount">
+        UPDATE partner SET matched_count = #{count} WHERE id = #{id}
+    </update>
+
+    <update id="updateTargetCount">
+        UPDATE partner SET target_count = #{count} WHERE id = #{id}
+    </update>
+
+    <select id="countPartnersBySearchCriteria" resultType="long">
+        SELECT COUNT(id)
+        FROM partner
+        <where>
+            <if test="subject != null and subject != ''">
+                AND subject LIKE CONCAT('%', #{subject}, '%')
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <select id="countByUserIdAndStatus" resultType="long">
+        SELECT COUNT(id)
+        FROM partner
+        WHERE user_id = #{userId} AND status = #{status}
+    </select>
+
+    <select id="countAllPartners" resultType="long">
+        SELECT COUNT(id)
+        FROM partner
+    </select>
+
+    <select id="findByIdSimple" resultMap="PartnerResultMap">
+        SELECT id, user_id, title, subject, target_count, matched_count, status
+        FROM partner
+        WHERE id = #{id}
+    </select>
+
+</mapper>

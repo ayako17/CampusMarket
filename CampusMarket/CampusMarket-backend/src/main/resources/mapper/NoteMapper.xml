@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.backend.repository.NoteMapper">
+
+    <sql id="Base_Note_Columns">
+        id, user_id, title, category, content, update_time
+    </sql>
+
+    <resultMap id="NoteResultMap" type="com.backend.entity.Note">
+        <id column="id" property="id" />
+        <result column="title" property="title" />
+        <result column="category" property="category" />
+        <result column="content" property="content" />
+        <result column="update_time" property="updateTime" />
+
+        <association property="user" column="user_id"
+                     select="com.backend.repository.UserMapper.findByIdSimple"/>
+
+        <collection property="imageUrls" ofType="string" column="id"
+                    select="com.backend.repository.NoteMapper.findImageUrlsByNoteId"/>
+
+        <collection property="attachmentUrls" ofType="string" column="id"
+                    select="com.backend.repository.NoteMapper.findAttachmentUrlsByNoteId"/>
+    </resultMap>
+
+    <select id="findAllNotes" resultMap="NoteResultMap">
+        SELECT <include refid="Base_Note_Columns" /> FROM notes
+        ORDER BY update_time DESC
+    </select>
+
+    <select id="findById" resultMap="NoteResultMap">
+        SELECT <include refid="Base_Note_Columns" /> FROM notes WHERE id = #{id}
+    </select>
+
+    <select id="findImageUrlsByNoteId" resultType="string">
+        SELECT image_url FROM note_image_urls WHERE note_id = #{noteId}
+    </select>
+
+    <select id="findAttachmentUrlsByNoteId" resultType="string">
+        SELECT attachment_url FROM note_attachment_urls WHERE note_id = #{noteId}
+    </select>
+
+    <insert id="insertNote" parameterType="com.backend.entity.Note"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO notes (user_id, title, category, content, update_time)
+        VALUES (#{user.id}, #{title}, #{category}, #{content}, NOW())
+    </insert>
+
+    <insert id="insertImageUrls">
+        INSERT INTO note_image_urls (note_id, image_url)
+        VALUES
+        <foreach collection="urls" item="url" separator=",">
+            (#{noteId}, #{url})
+        </foreach>
+    </insert>
+
+    <insert id="insertAttachmentUrls">
+        INSERT INTO note_attachment_urls (note_id, attachment_url)
+        VALUES
+        <foreach collection="urls" item="url" separator=",">
+            (#{noteId}, #{url})
+        </foreach>
+    </insert>
+
+    <update id="updateNote" parameterType="com.backend.entity.Note">
+        UPDATE notes
+        <set>
+            title = #{title},
+            category = #{category},
+            content = #{content},
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteImageUrlsByNoteId">
+        DELETE FROM note_image_urls WHERE note_id = #{noteId}
+    </delete>
+
+    <delete id="deleteAttachmentUrlsByNoteId">
+        DELETE FROM note_attachment_urls WHERE note_id = #{noteId}
+    </delete>
+
+    <delete id="deleteNoteById">
+        DELETE FROM notes WHERE id = #{id}
+    </delete>
+
+    <select id="findByTitleContaining" resultMap="NoteResultMap">
+        SELECT <include refid="Base_Note_Columns" /> FROM notes
+        WHERE title LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY update_time DESC
+    </select>
+
+    <select id="findByUserId" resultMap="NoteResultMap">
+        SELECT <include refid="Base_Note_Columns" /> FROM notes
+        WHERE user_id = #{userId}
+        ORDER BY update_time DESC
+    </select>
+</mapper>
